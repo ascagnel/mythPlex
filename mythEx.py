@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 import urllib
 import platform
-# import re
+import re
 
 host_url = "10.0.1.10"
 host_port = "6544"
@@ -19,7 +19,12 @@ if platform.system() == "Windows":
 else:
 	separator = "/"
 
-# library = open('library','ra')
+if os.path.isfile('library') or os.path.islink('library'):
+    library = open('library','r')
+    lib = re.split(",",library.read())
+    library.close()
+else:
+    lib = ""
 
 print "Beginning symlinking.  Looking up from MythTV: http://" + host_url + ":" + host_port + '/Dvr/GetRecordedList'
 
@@ -27,13 +32,6 @@ tree = ET.parse(urllib.urlopen("http://" + host_url + ":" + host_port + '/Dvr/Ge
 root = tree.getroot()
 
 for program in root.iter('Program'):
-	# ids = re.compile(library.read())
-	# if ids.findall(program.find('ProgramId').text):
-		# print "matched program ID, skipping"
-		# continue
-
-	# print program.find('ProgramId').text
-	# continue
 
 	title = program.find('Title').text
 	ep_title = program.find('SubTitle').text
@@ -41,7 +39,16 @@ for program in root.iter('Program'):
 	ep_num = program.find('Episode').text.zfill(2)
 	ep_file_extension= program.find('FileName').text[-4:]
 	ep_file_name = program.find('FileName').text
+        ep_id = program.find('ProgramId').text
 
+        # Skip previously finished files
+        if len(lib) > 0:
+            if ep_id in lib:
+		    print "Matched program ID, skipping " + title + " - S" + ep_season + "E" + ep_num
+		    continue
+            elif len(ep_id) > 0:
+                lib.append(ep_id)
+    
 	# Plex doesn't do specials
 	if ep_season == '00' and ep_num == '00':
 		continue
@@ -72,4 +79,11 @@ for program in root.iter('Program'):
 	print "Linking " + source_path + " ==> " + link_path
 	os.symlink(source_path, link_path)
 
+# Save the list of file IDs
+outstring = ""
+for item in lib:
+    outstring += item + ","
 
+library = open('library', 'w')
+library.write(outstring)
+library.close()
