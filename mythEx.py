@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os
 import xml.etree.ElementTree as ET
 import urllib
@@ -31,9 +33,9 @@ else:
 
 url = "http://" + host_url + ":" + host_port
 print "Beginning symlinking."
-print "Looking up from MythTV: http://" + url + '/Dvr/GetRecordedList'
+print "Looking up from MythTV: " + url + '/Dvr/GetRecordedList'
 
-tree = ET.parse(urllib.urlopen("http://" + url + '/Dvr/GetRecordedList'))
+tree = ET.parse(urllib.urlopen(url + '/Dvr/GetRecordedList'))
 root = tree.getroot()
 
 for program in root.iter('Program'):
@@ -45,6 +47,9 @@ for program in root.iter('Program'):
     ep_file_extension = program.find('FileName').text[-4:]
     ep_file_name = program.find('FileName').text
     ep_id = program.find('ProgramId').text
+    
+    # parse show name for file-system safe name
+    title = re.sub(r'[]/\;,><&*:%=+@!#^()|?^', '_', title)
 
     episode_name = title + " - S" + ep_season + "E" + ep_num
     # Skip previously finished files
@@ -52,7 +57,7 @@ for program in root.iter('Program'):
         if ep_id in lib:
             print "Matched program ID, skipping " + episode_name
             continue
-        elif len(ep_id) > 0:
+        else:
             lib.append(ep_id)
 
     # Plex doesn't do specials
