@@ -47,11 +47,13 @@ for program in root.iter('Program'):
     ep_file_extension = program.find('FileName').text[-4:]
     ep_file_name = program.find('FileName').text
     ep_id = program.find('ProgramId').text
+    ep_airdate = program.find('Airdate').text
     
     # parse show name for file-system safe name
-    title = re.sub(r'[]/\;,><&*:%=+@!#^()|?^', '_', title)
+    title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
 
     episode_name = title + " - S" + ep_season + "E" + ep_num
+
     # Skip previously finished files
     if len(lib) > 0:
         if ep_id in lib:
@@ -62,7 +64,11 @@ for program in root.iter('Program'):
 
     # Plex doesn't do specials
     if ep_season == '00' and ep_num == '00':
-        continue
+        if (ep_airdate is None):
+            continue
+        else:
+            episode_name = title + " - " + ep_airdate
+
 
     # Symlink path
     link_path = (plex_library_directory +
