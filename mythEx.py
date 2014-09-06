@@ -48,7 +48,7 @@ for program in root.iter('Program'):
     ep_file_name = program.find('FileName').text
     ep_id = program.find('ProgramId').text
     ep_airdate = program.find('Airdate').text
-    
+
     # parse show name for file-system safe name
     title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
 
@@ -68,7 +68,6 @@ for program in root.iter('Program'):
             continue
         else:
             episode_name = title + " - " + ep_airdate
-
 
     # Symlink path
     link_path = (plex_library_directory +
