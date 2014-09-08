@@ -5,16 +5,9 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
+import config
 
-host_url = "10.0.1.10"
-host_port = "6544"
-plex_library_directory = "/home/ascagnel/TV Shows/"
-mythtv_recording_directories = ["/var/media/disk1/Recordings/",
-                                "/var/media/disk2/Recordings/",
-                                "/var/media/disk3/Recordings/",
-                                "/var/media/disk4/Recordings/"]
-
-for myth_dir in mythtv_recording_directories[:]:
+for myth_dir in config.mythtv_recording_directories[:]:
     if os.path.exists(myth_dir) is not True:
         print myth_dir + " is not a valid path.  Aborting"
         quit()
@@ -31,7 +24,7 @@ if os.path.isfile('library') or os.path.islink('library'):
 else:
     lib = ""
 
-url = "http://" + host_url + ":" + host_port
+url = "http://" + config.host_url + ":" + config.host_port
 print "Beginning symlinking."
 print "Looking up from MythTV: " + url + '/Dvr/GetRecordedList'
 
@@ -70,12 +63,12 @@ for program in root.iter('Program'):
             episode_name = title + " - " + ep_airdate
 
     # Symlink path
-    link_path = (plex_library_directory +
+    link_path = (config.plex_library_directory +
                  title + separator + episode_name + ep_file_extension)
 
     # Watch for oprhaned recordings!
     source_dir = None
-    for myth_dir in mythtv_recording_directories[:]:
+    for myth_dir in config.mythtv_recording_directories[:]:
         source_path = myth_dir + ep_file_name
         if os.path.isfile(source_path):
             source_dir = myth_dir
@@ -90,9 +83,9 @@ for program in root.iter('Program'):
         print "Symlink " + link_path + " already exists.  Skipping."
         continue
 
-    if not os.path.exists(plex_library_directory + title):
+    if not os.path.exists(config.plex_library_directory + title):
         print "Show folder does not exist, creating."
-        os.makedirs(plex_library_directory + title)
+        os.makedirs(config.plex_library_directory + title)
 
     print "Linking " + source_path + " ==> " + link_path
     os.symlink(source_path, link_path)
