@@ -15,11 +15,6 @@ if config.moviedb_testmode:
 else:
     moviedb = 'http://api.themoviedb.org/3/search/movie'
 
-for myth_dir in config.mythtv_recording_directories[:]:
-    if os.path.exists(myth_dir) is not True:
-        print myth_dir + " is not a valid path.  Aborting"
-        quit()
-
 if platform.system() == "Windows":
     separator = "\\"
 else:
