@@ -5,16 +5,17 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
+import config
+import cgi
+import sys
+from MythTV.tmdb3 import searchMovie
 
-host_url = "10.0.1.10"
-host_port = "6544"
-plex_library_directory = "/home/ascagnel/TV Shows/"
-mythtv_recording_directories = ["/var/media/disk1/Recordings/",
-                                "/var/media/disk2/Recordings/",
-                                "/var/media/disk3/Recordings/",
-                                "/var/media/disk4/Recordings/"]
+if config.moviedb_testmode:
+    moviedb = 'http://private-dc013f25e-themoviedb.apiary-mock.com/3/search/movie'
+else:
+    moviedb = 'http://api.themoviedb.org/3/search/movie'
 
-for myth_dir in mythtv_recording_directories[:]:
+for myth_dir in config.mythtv_recording_directories[:]:
     if os.path.exists(myth_dir) is not True:
         print myth_dir + " is not a valid path.  Aborting"
         quit()
@@ -31,7 +32,7 @@ if os.path.isfile('library') or os.path.islink('library'):
 else:
     lib = ""
 
-url = "http://" + host_url + ":" + host_port
+url = "http://" + config.host_url + ":" + config.host_port
 print "Beginning symlinking."
 print "Looking up from MythTV: " + url + '/Dvr/GetRecordedList'
 
@@ -48,7 +49,7 @@ for program in root.iter('Program'):
     ep_file_name = program.find('FileName').text
     ep_id = program.find('ProgramId').text
     ep_airdate = program.find('Airdate').text
-    
+
     # parse show name for file-system safe name
     title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
 
@@ -62,21 +63,29 @@ for program in root.iter('Program'):
         else:
             lib.append(ep_id)
 
-    # Plex doesn't do specials
+    # Handle specials, movies, etc.
     if ep_season == '00' and ep_num == '00':
-        if (ep_airdate is None):
-            continue
-        else:
+        #Fallback 1: Check TheMovieDB
+        moviedb_successful = False
+        moviedb_run = False
+        if (config.moviedb_enabled):
+            print "Querying TheMovieDB for " + title
+            res = searchMovie(title)
+            print (res[0])
+        #Fallback 2: Air date
+        if (ep_airdate is not None and moviedb_run is True and
+                moviedb_successful is False):
             episode_name = title + " - " + ep_airdate
-
+        else:
+            continue
 
     # Symlink path
-    link_path = (plex_library_directory +
+    link_path = (config.plex_tv_directory +
                  title + separator + episode_name + ep_file_extension)
 
     # Watch for oprhaned recordings!
     source_dir = None
-    for myth_dir in mythtv_recording_directories[:]:
+    for myth_dir in config.mythtv_recording_directories[:]:
         source_path = myth_dir + ep_file_name
         if os.path.isfile(source_path):
             source_dir = myth_dir
@@ -91,9 +100,9 @@ for program in root.iter('Program'):
         print "Symlink " + link_path + " already exists.  Skipping."
         continue
 
-    if not os.path.exists(plex_library_directory + title):
+    if not os.path.exists(config.plex_tv_directory + title):
         print "Show folder does not exist, creating."
-        os.makedirs(plex_library_directory + title)
+        os.makedirs(config.plex_tv_directory + title)
 
     print "Linking " + source_path + " ==> " + link_path
     os.symlink(source_path, link_path)
