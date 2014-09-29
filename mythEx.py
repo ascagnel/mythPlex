@@ -9,11 +9,14 @@ import config
 import cgi
 import sys
 from MythTV.tmdb3 import searchMovie
+from MythTV.tmdb3 import set_key
 
-if config.moviedb_testmode:
-    moviedb = 'http://private-dc013f25e-themoviedb.apiary-mock.com/3/search/movie'
-else:
-    moviedb = 'http://api.themoviedb.org/3/search/movie'
+if config.moviedb_enabled:
+    set_key(config.moviedb_api_key)
+    if config.moviedb_testmode:
+        moviedb = 'http://private-dc013f25e-themoviedb.apiary-mock.com/3/search/movie'
+    else:
+        moviedb = 'http://api.themoviedb.org/3/search/movie'
 
 if platform.system() == "Windows":
     separator = "\\"
@@ -66,7 +69,14 @@ for program in root.iter('Program'):
         if (config.moviedb_enabled):
             print "Querying TheMovieDB for " + title
             res = searchMovie(title)
-            print (res[0])
+            if (len(res) is 0):
+                moviedb_successful = False
+                print "Could not look up from TheMovieDB"
+            else: 
+                moviedb_successful = True
+                print (res[0].title)
+                title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', res[0].title)
+                episode_name = title
         #Fallback 2: Air date
         if (ep_airdate is not None and moviedb_run is True and
                 moviedb_successful is False):
