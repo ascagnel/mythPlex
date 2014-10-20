@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
-import config
+import config_own as config
 import cgi
 import sys
-from MythTV.tmdb3 import searchMovie
-from MythTV.tmdb3 import set_key
+#from MythTV.tmdb3 import searchMovie
+#from MythTV.tmdb3 import set_key
 import calendar
 from datetime import datetime, timedelta
 
@@ -145,7 +145,11 @@ def main():
 
         else:
             print "Linking " + source_path + " ==> " + output_path
+<<<<<<< HEAD
                 os.symlink(source_path, output_path)
+=======
+            os.symlink(source_path, output_path)
+>>>>>>> avconv
 
         print "[INFO] Linking " + source_path + " ==> " + link_path
         os.symlink(source_path, link_path)
