@@ -1,0 +1,6 @@
+
+config_own.py
+
+*.pyc
+
+library
