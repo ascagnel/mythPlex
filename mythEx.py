@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
-import config_own as config
+import config
 import cgi
 import sys
-#from MythTV.tmdb3 import searchMovie
-#from MythTV.tmdb3 import set_key
+from MythTV.tmdb3 import searchMovie
+from MythTV.tmdb3 import set_key
 import calendar
 from datetime import datetime, timedelta
 
