@@ -138,10 +138,10 @@ def main():
                 run_mythcommflag()
 
             # Re-encode with avconv
-            run_avconv()
+            run_avconv(source_path, link_path)
             
         elif config.avconv_remux_enabled:
-            run_avconv_remux()
+            run_avconv_remux(source_path, link_path)
 
         else:
             print "[INFO] Linking " + source_path + " ==> " + link_path
@@ -168,7 +168,7 @@ def run_mythcommflag():
     os.system(mythcommflag_command)
 
 
-def run_avconv():
+def run_avconv(source_path, output_path):
     avconv_command = "nice -n " + str(avconv_nicevalue)
     avconv_command += " avconv -i " + source_path
     avconv_command += " -itsoffset " + str(avconv_audio_offset)
@@ -191,7 +191,7 @@ def run_avconv():
     print "Running avconv with command line " + avconv_command
     os.system(avconv_command)
 
-def run_avconv_remux():
+def run_avconv_remux(source_path, output_path):
     avconv_command = "avconv -i " + source_path + " -c copy \"" + output_path + "\""
     print "Running avconv remux with command " + avconv_command
     os.system(avconv_command)
