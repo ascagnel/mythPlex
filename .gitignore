@@ -9,3 +9,5 @@ config_own.pyc
 *.pyc
 
 library
+
+.library
