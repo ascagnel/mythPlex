@@ -1,6 +1,11 @@
 
 config_own.py
 
+<<<<<<< HEAD
+=======
+config_own.pyc
+
+>>>>>>> avconv
 *.pyc
 
 library
