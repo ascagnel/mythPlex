@@ -135,7 +135,7 @@ def main():
             # MythTV's mythcommflag can be used to remove commercials,
             # shrinking recordings and improving viewing.
             if config.avconv_mythcommflag_enabled is True:
-                run_mythcommflag()
+                run_mythcommflag(source_path)
 
             # Re-encode with avconv
             run_avconv(source_path, link_path)
@@ -158,7 +158,7 @@ def close_library(lib):
     library.write(outstring)
     library.close()
 
-def run_mythcommflag():
+def run_mythcommflag(source_path):
     mythcommflag_command = 'mythcommflag -f '
     mythcommflag_command += source_path
     mythcommflag_command += ' --outputfile ~/.mythExCommflag.edl'
