@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
-import config_own as config
+import config
 import cgi
 import sys
-#from MythTV.tmdb3 import searchMovie
-#from MythTV.tmdb3 import set_key
+from MythTV.tmdb3 import searchMovie
+from MythTV.tmdb3 import set_key
 import calendar
 from datetime import datetime, timedelta
 
@@ -126,6 +126,26 @@ def main():
         if not os.path.exists(config.plex_tv_directory + title):
             print "[INFO] Show folder does not exist, creating."
             os.makedirs(config.plex_tv_directory + title)
+        
+        # avconv (next-gen ffmpeg) support -- convert files to MP4
+        # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
+        # support native playback.
+        if config.avconv_enabled is True:
+            mthcommflag_exists = False
+            # MythTV's mythcommflag can be used to remove commercials,
+            # shrinking recordings and improving viewing.
+            if config.avconv_mythcommflag_enabled is True:
+                run_mythcommflag()
+
+            # Re-encode with avconv
+            run_avconv()
+            
+        elif config.avconv_remux_enabled:
+            run_avconv_remux()
+
+        else:
+            print "Linking " + source_path + " ==> " + output_path
+                os.symlink(source_path, output_path)
 
         print "[INFO] Linking " + source_path + " ==> " + link_path
         os.symlink(source_path, link_path)
@@ -141,7 +161,61 @@ def close_library(lib):
     library.write(outstring)
     library.close()
 
+def run_mythcommflag():
+    mythcommflag_command = 'mythcommflag -f '
+    mythcommflag_command += source_path
+    mythcommflag_command += ' --outputfile ~/.mythExCommflag.edl'
+    # mythcommflag_command += ' --method 7'
+    if config.avconv_mythcommflag_verbose:
+        mythcommflag_command += ' -v'
+    os.system(mythcommflag_command)
+
+
+def run_avconv():
+    avconv_command = "nice -n " + str(avconv_nicevalue)
+    avconv_command += " avconv -i " + source_path
+    avconv_command += " -itsoffset " + str(avconv_audio_offset)
+    avconv_command += " -i " + source_path
+    avconv_command += " -map 0:0 -map 1:1"
+    avconv_command += " -acodec " + avconv_audiocodec
+    avconv_command += " -ar " + avconv_audiofrequency
+    avconv_command += " -ac " + str(avconv_audiochannels)
+    avconv_command += " -ab " + avconv_audiobitrate
+    avconv_command += " -async 1"
+    avconv_command += " -copyts"
+    avconv_command += " -s " + avconv_size
+    avconv_command += " -f " + avconv_filetype
+    avconv_command += " -vcodec " + avconv_videocodec
+    avconv_command += " -b:v " + avconv_videobitrate
+    avconv_command += " -threads " + str(avconv_threads)
+    avconv_command += " -level 31"
+    avconv_command += " -vf \"yadif\" "
+    avconv_command += "\"" + output_path + "\""
+    print "Running avconv with command line " + avconv_command
+    os.system(avconv_command)
+
+def run_avconv_remux():
+    avconv_command = "avconv -i " + source_path + " -c copy \"" + output_path + "\""
+    print "Running avconv remux with command " + avconv_command
+    os.system(avconv_command)
+
 # globals
+avconv_deinterlace = False
+avconv_size = "hd1080"
+avconv_audiocodec = "copy"
+avconv_audiobitrate = "192k"
+avconv_audiofrequency = "48000"
+avconv_audiochannels = 6
+avconv_filetype = "mp4"
+avconv_threads = 2
+avconv_nicevalue = 0
+avconv_videocodec = "libx264"
+avconv_videobitrate = config.avconv_bitrate
+if config.avconv_audio_offset_enabled:
+    avconv_audio_offset = config.avconv_audio_offset_time
+else:
+    avconv_audio_offset = 0
+
 if config.moviedb_enabled:
     set_key(config.moviedb_api_key)
     if config.moviedb_testmode:
