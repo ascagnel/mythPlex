@@ -14,3 +14,25 @@ Instructions
 2. Change the IP and port number (host\_url and host\_port) to match your setup.
 3. Set up the directory you would like the linked files to reside in, and change "plex\_library\_directory" to match.
 
+Remuxing
+--------
+
+If you would prefer to outright copy the file, without changing its makeup, you may do so by changing the "avconv\_remux\_enabled" option to "True".
+
+Commercial Skipping (new as of December 2014)
+---------------------------------------------
+
+mythPlex can now take advantage of Myth TV's built-in commercial skipping!  
+To use it, make sure you have the automatic commercial skipping turned off for new recordings from MythFrontend.
+After, simply make sure you have both the "avconv\_remux\_enabled" and "avonv\_mythcommflag\_enabled" flags turned on.  
+If you start seeing issues with incorrect skips, also turn on "avconv\_mythcommflag\_verbose" to monitor the frame numbers.
+
+Planned Changes
+---------------
+
+* Re-encoding to save space.
+
+Uninstallation
+--------------
+
+Simply delete the mythPlex directory from your system.
