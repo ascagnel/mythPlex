@@ -19,7 +19,8 @@ moviedb_testmode = False
 avconv_enabled = False
 avconv_bitrate = "8300k"
 avconv_mythcommflag_enabled = False
-avconv_mythcommflag_verbose = True
-avconv_audio_offset_enabled = True
+avconv_mythcommflag_verbose = False
+avconv_audio_offset_enabled = False
 avconv_audio_offset_time = 0.2
 avconv_remux_enabled = False
+

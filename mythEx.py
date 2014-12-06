@@ -12,6 +12,7 @@ from MythTV.tmdb3 import searchMovie
 from MythTV.tmdb3 import set_key
 import calendar
 from datetime import datetime, timedelta
+import commands
 
 def utc_to_local(utc_dt):
     # get integer timestamp to avoid precision lost
@@ -153,7 +154,10 @@ def main():
             run_avconv(source_path, link_path)
             
         elif config.avconv_remux_enabled:
-            run_avconv_remux(source_path, link_path)
+            if config.avconv_mythcommflag_enabled is True:
+                run_avconv_remux_mythcommflag(source_path, link_path)
+            else:
+                run_avconv_remux(source_path, link_path)
 
         else:
             print "[INFO] Linking " + source_path + " ==> " + link_path
@@ -171,12 +175,14 @@ def close_library(lib):
 def run_mythcommflag(source_path):
     mythcommflag_command = 'mythcommflag -f '
     mythcommflag_command += source_path
-    mythcommflag_command += ' --outputfile ~/.mythExCommflag.edl'
-    # mythcommflag_command += ' --method 7'
+    mythcommflag_command += ' --outputmethod essentials'
+    mythcommflag_command += ' --outputfile .mythExCommflag.edl'
+    #mythcommflag_command += ' --method d2_scene'
+    mythcommflag_command += ' --skipdb --quiet'
     if config.avconv_mythcommflag_verbose:
         mythcommflag_command += ' -v'
+    print "[INFO] Running mythcommflag: {" + mythcommflag_command + "}"
     os.system(mythcommflag_command)
-
 
 def run_avconv(source_path, output_path):
     avconv_command = "nice -n " + str(avconv_nicevalue)
@@ -205,6 +211,65 @@ def run_avconv_remux(source_path, output_path):
     avconv_command = "avconv -i " + source_path + " -c copy \"" + output_path + "\""
     print "Running avconv remux with command " + avconv_command
     os.system(avconv_command)
+
+def run_avconv_remux_mythcommflag(source_path, output_path):
+    print "[INFO] Running mythcommflag on {" + source_path + "}"
+    run_mythcommflag(source_path)
+    cutlist = open('.mythExCommflag.edl', 'r')
+    cutpoints = []
+    pointtypes = []
+    starts_with_commercial = False
+    for cutpoint in cutlist:
+        if 'framenum' in cutpoint:
+	    line = cutpoint.split()
+            print '[INFO] ' + line[0] + ' - {' + line[1] + '} -- ' + line[2] + ' - {' + line[3] + '}'
+            if line[1] is '0' and line[3] is '4':
+                starts_with_commercial = True
+            cutpoints.append(line[1])
+            pointtypes.append(line[3])
+    cutlist.close()
+    os.system('rm .mythExCommflag.edl')
+    framerate = float(commands.getoutput('ffmpeg -i '+source_path+' 2>&1 | sed -n \"s/.*, \\(.*\\) fp.*/\\1/p\"'))
+    print '[INFO] Video frame rate is ' + str(framerate)
+    print '[INFO] Starts with commercial? ' + str(starts_with_commercial)
+    print '[INFO] Found ' + str(len(cutpoints)) + ' cut points.'
+    segments = 0
+    for cutpoint in cutpoints:
+        index = cutpoints.index(cutpoint) 
+        startpoint = float(cutpoints[index])/framerate
+        duration = 0
+        if index is 0 and not starts_with_commercial:
+            print '[INFO] Starting with non-commercial'
+            duration = float(cutpoints[0])/framerate
+            startpoint = 0
+        elif pointtypes[index] is '4':
+            print '[INFO] Skipping cut point type 4'
+            continue
+        elif (index+1) < len(cutpoints):
+            duration = (float(cutpoints[index+1])-float(cutpoints[index]))/framerate
+        print '[INFO] Start point: [' + str(startpoint) + ']'
+        print '[INFO] duration of segment ' + str(segments) + ': ' + str(duration)
+        if duration is 0:
+            avconv_command = 'avconv -i ' + source_path + ' -ss ' + str(startpoint) + ' -c copy output' + str(segments) + '.mpg'
+        else:
+            avconv_command = 'avconv -i ' + source_path + ' -ss ' + str(startpoint) + ' -t ' + str(duration) + ' -c copy output' + str(segments) + '.mpg'
+        print '[INFO] running avconv with command line {' + avconv_command + '}'
+        os.system(avconv_command)
+        segments = segments + 1
+    current_segment = 0
+    concat_command = 'cat'
+    while current_segment < segments:
+        concat_command += ' output' + str(current_segment) + '.mpg'
+        current_segment = current_segment + 1
+    concat_command += ' >> tempfile.mpg'
+    print '[INFO] Merging files with command [' + concat_command + ']'
+    os.system(concat_command)
+    print '[INFO] Copying to final destination as stream copy to fix seeking'
+    avconv_copy = 'avconv -i testfile.mpg -c copy \"' + output_path + '\"'
+    os.system(avconv_copy)
+    print '[INFO] Cleaning up temporary files.'
+    os.system('rm output*.mpg')
+    os.system('rm tempfile.mpg')
 
 # globals
 avconv_deinterlace = False
