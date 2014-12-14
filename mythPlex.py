@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
-import config
+import config_own as config
 from MythTV.tmdb3 import searchMovie
 from MythTV.tmdb3 import set_key
 import calendar
@@ -156,11 +156,11 @@ def main():
         # avconv (next-gen ffmpeg) support -- convert files to MP4
         # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
         # support native playback.
-        if config.avconv_enabled is True:
+        if config.transcode_enabled is True:
             # Re-encode with avconv
             run_avconv(source_path, link_path)
 
-        elif config.avconv_remux_enabled:
+        elif config.remux_enabled:
             run_avconv_remux(source_path, link_path)
 
         else:
@@ -185,7 +185,7 @@ def mythcommflag_run(source_path):
     mythcommflag_command += ' --outputfile .mythExCommflag.edl'
     #mythcommflag_command += ' --method d2_scene'
     mythcommflag_command += ' --skipdb --quiet'
-    if config.avconv_mythcommflag_verbose:
+    if config.mythcommflag_verbose:
         mythcommflag_command += ' -v'
     print "[INFO] Running mythcommflag: {" + mythcommflag_command + "}"
     os.system(mythcommflag_command)
@@ -257,32 +257,36 @@ def mythcommflag_cleanup():
 
 
 def run_avconv(source_path, output_path):
-    if (config.avconv_mythcommflag_enabled is True):
-        source_path = mythcommflag_run()
-    avconv_command = "nice -n " + str(config.avconv_transcode_nicevalue)
+    if (config.mythcommflag_enabled is True):
+        source_path = mythcommflag_run(source_path)
+    avconv_command = "nice -n " + str(config.transcode_nicevalue)
     avconv_command += " avconv -i " + source_path
-    avconv_command += " -c:v " + config.avconv_transcode_videocodec
-    avconv_command += " -preset " + config.avconv_transcode_preset
-    avconv_command += " -tune " + config.avconv_transcode_tune
-    if (config.avconv_transcode_deinterlace is True):
+    avconv_command += " -c:v " + config.transcode_videocodec
+    avconv_command += " -preset " + config.transcode_preset
+    avconv_command += " -tune " + config.transcode_tune
+    if (config.transcode_deinterlace is True):
         avconv_command += " -vf yadif"
-    avconv_command += " -c:a " + config.avconv_transcode_audiocodec
-    avconv_command += " -threads " + str(config.avconv_transcode_threads)
-    avconv_command += "\"" + output_path + "\""
+    avconv_command += " -profile:v " + config.transcode_profile
+    avconv_command += " -level " + config.transcode_level
+    avconv_command += " -c:a " + config.transcode_audiocodec
+    avconv_command += " -threads " + str(config.transcode_threads)
+    output_path = output_path[:-3]
+    output_path += "mp4"
+    avconv_command += " \"" + output_path + "\""
     print "[INFO] Running avconv with command line " + avconv_command
     os.system(avconv_command)
-    if (config.avconv_mythcommflag_enabled is True):
+    if (config.mythcommflag_enabled is True):
         mythcommflag_cleanup()
 
 
 def run_avconv_remux(source_path, output_path):
-    if (config.avconv_mythcommflag_enabled is True):
+    if (config.mythcommflag_enabled is True):
         source_path = mythcommflag_run(source_path)
     avconv_command = ("avconv -i " + source_path + " -c copy \"" +
                       output_path + "\"")
     print "Running avconv remux with command " + avconv_command
     os.system(avconv_command)
-    if (config.avconv_mythcommflag_enabled is True):
+    if (config.mythcommflag_enabled is True):
         mythcommflag_cleanup()
 
 
