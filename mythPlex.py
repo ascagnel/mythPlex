@@ -32,6 +32,11 @@ def open_library():
 
 
 def main():
+    print "mythPlex, Copyright (C) 2014 Andrew Scagnelli"
+    print "mythPlex comes with ABSOLUTELY NO WARRANTY."
+    print "This is free software, and you are welcome to redistribute it"
+    print "under certain conditions."
+    print "See LICENSE file for details.\n"
     print "[INFO] Starting mythEx"
     lib = open_library()
     url = "http://" + config.host_url + ":" + config.host_port
