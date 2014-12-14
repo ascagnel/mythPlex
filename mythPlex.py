@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import urllib
 import platform
 import re
-import config_own as config
+import config
 from MythTV.tmdb3 import searchMovie
 from MythTV.tmdb3 import set_key
 import calendar
