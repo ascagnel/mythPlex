@@ -17,8 +17,12 @@ moviedb_api_key = ""
 
 avconv_enabled = False
 avconv_remux_enabled = False
-avconv_bitrate = "8300k"
-avconv_mythcommflag_enabled = True
-avconv_mythcommflag_verbose = True
-avconv_audio_offset_enabled = True
-avconv_audio_offset_time = 0.2
+avconv_mythcommflag_enabled = False
+avconv_mythcommflag_verbose = False
+avconv_transcode_deinterlace = True
+avconv_transcode_audiocodec = "copy"
+avconv_transcode_threads = 2
+avconv_transcode_nicevalue = 0
+avconv_transcode_videocodec = "libx264"
+avconv_transcode_preset = "veryfast"
+avconv_transcode_tune = "film"

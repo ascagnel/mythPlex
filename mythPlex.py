@@ -157,19 +157,11 @@ def main():
         # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
         # support native playback.
         if config.avconv_enabled is True:
-            # MythTV's mythcommflag can be used to remove commercials,
-            # shrinking recordings and improving viewing.
-            if config.avconv_mythcommflag_enabled is True:
-                run_mythcommflag(source_path)
-
             # Re-encode with avconv
             run_avconv(source_path, link_path)
 
         elif config.avconv_remux_enabled:
-            if config.avconv_mythcommflag_enabled is True:
-                run_avconv_remux_mythcommflag(source_path, link_path)
-            else:
-                run_avconv_remux(source_path, link_path)
+            run_avconv_remux(source_path, link_path)
 
         else:
             print "[INFO] Linking " + source_path + " ==> " + link_path
@@ -186,7 +178,7 @@ def close_library(lib):
     library.close()
 
 
-def run_mythcommflag(source_path):
+def mythcommflag_run(source_path):
     mythcommflag_command = 'mythcommflag -f '
     mythcommflag_command += source_path
     mythcommflag_command += ' --outputmethod essentials'
@@ -197,42 +189,6 @@ def run_mythcommflag(source_path):
         mythcommflag_command += ' -v'
     print "[INFO] Running mythcommflag: {" + mythcommflag_command + "}"
     os.system(mythcommflag_command)
-
-
-def run_avconv(source_path, output_path):
-    avconv_command = "nice -n " + str(avconv_nicevalue)
-    avconv_command += " avconv -i " + source_path
-    avconv_command += " -itsoffset " + str(avconv_audio_offset)
-    avconv_command += " -i " + source_path
-    avconv_command += " -map 0:0 -map 1:1"
-    avconv_command += " -acodec " + avconv_audiocodec
-    avconv_command += " -ar " + avconv_audiofrequency
-    avconv_command += " -ac " + str(avconv_audiochannels)
-    avconv_command += " -ab " + avconv_audiobitrate
-    avconv_command += " -async 1"
-    avconv_command += " -copyts"
-    avconv_command += " -s " + avconv_size
-    avconv_command += " -f " + avconv_filetype
-    avconv_command += " -vcodec " + avconv_videocodec
-    avconv_command += " -b:v " + avconv_videobitrate
-    avconv_command += " -threads " + str(avconv_threads)
-    avconv_command += " -level 31"
-    avconv_command += " -vf \"yadif\" "
-    avconv_command += "\"" + output_path + "\""
-    print "Running avconv with command line " + avconv_command
-    os.system(avconv_command)
-
-
-def run_avconv_remux(source_path, output_path):
-    avconv_command = ("avconv -i " + source_path + " -c copy \"" +
-                      output_path + "\"")
-    print "Running avconv remux with command " + avconv_command
-    os.system(avconv_command)
-
-
-def run_avconv_remux_mythcommflag(source_path, output_path):
-    print "[INFO] Running mythcommflag on {" + source_path + "}"
-    run_mythcommflag(source_path)
     cutlist = open('.mythExCommflag.edl', 'r')
     cutpoints = []
     pointtypes = []
@@ -291,29 +247,44 @@ def run_avconv_remux_mythcommflag(source_path, output_path):
     concat_command += ' >> tempfile.mpg'
     print '[INFO] Merging files with command [' + concat_command + ']'
     os.system(concat_command)
-    print '[INFO] Copying to final destination as stream copy to fix seeking'
-    avconv_copy = 'avconv -i testfile.mpg -c copy \"' + output_path + '\"'
-    os.system(avconv_copy)
+    return 'tempfile.mpg'
+
+
+def mythcommflag_cleanup():
     print '[INFO] Cleaning up temporary files.'
     os.system('rm output*.mpg')
     os.system('rm tempfile.mpg')
 
-# globals
-avconv_deinterlace = False
-avconv_size = "hd1080"
-avconv_audiocodec = "copy"
-avconv_audiobitrate = "192k"
-avconv_audiofrequency = "48000"
-avconv_audiochannels = 6
-avconv_filetype = "mp4"
-avconv_threads = 2
-avconv_nicevalue = 0
-avconv_videocodec = "libx264"
-avconv_videobitrate = config.avconv_bitrate
-if config.avconv_audio_offset_enabled:
-    avconv_audio_offset = config.avconv_audio_offset_time
-else:
-    avconv_audio_offset = 0
+
+def run_avconv(source_path, output_path):
+    if (config.avconv_mythcommflag_enabled is True):
+        source_path = mythcommflag_run()
+    avconv_command = "nice -n " + str(config.avconv_transcode_nicevalue)
+    avconv_command += " avconv -i " + source_path
+    avconv_command += " -c:v " + config.avconv_transcode_videocodec
+    avconv_command += " -preset " + config.avconv_transcode_preset
+    avconv_command += " -tune " + config.avconv_transcode_tune
+    if (config.avconv_transcode_deinterlace is True):
+        avconv_command += " -vf yadif"
+    avconv_command += " -c:a " + config.avconv_transcode_audiocodec
+    avconv_command += " -threads " + str(config.avconv_transcode_threads)
+    avconv_command += "\"" + output_path + "\""
+    print "[INFO] Running avconv with command line " + avconv_command
+    os.system(avconv_command)
+    if (config.avconv_mythcommflag_enabled is True):
+        mythcommflag_cleanup()
+
+
+def run_avconv_remux(source_path, output_path):
+    if (config.avconv_mythcommflag_enabled is True):
+        source_path = mythcommflag_run(source_path)
+    avconv_command = ("avconv -i " + source_path + " -c copy \"" +
+                      output_path + "\"")
+    print "Running avconv remux with command " + avconv_command
+    os.system(avconv_command)
+    if (config.avconv_mythcommflag_enabled is True):
+        mythcommflag_cleanup()
+
 
 if config.moviedb_enabled:
     set_key(config.moviedb_api_key)
