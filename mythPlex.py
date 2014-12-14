@@ -204,7 +204,7 @@ def mythcommflag_run(source_path):
             pointtypes.append(line[3])
     cutlist.close()
     os.system('rm .mythExCommflag.edl')
-    framerate = float(commands.getoutput('ffmpeg -i ' + source_path +
+    framerate = float(commands.getoutput('avconv -i ' + source_path +
                       ' 2>&1 | sed -n \"s/.*, \\(.*\\) fp.*/\\1/p\"'))
     print '[INFO] Video frame rate is ' + str(framerate)
     print '[INFO] Starts with commercial? ' + str(starts_with_commercial)
