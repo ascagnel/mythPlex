@@ -12,9 +12,10 @@ Note that this script requires local access to recordings.  The drives holding t
 Instructions
 ============
 
-1. Take note of all configured MythTV recording directories.  Fill in the "directories" variable under "\[Recording\]" with them; if there are multiple directories, please use a comma-separated list.
-2. Change the IP and port number (host\_url and host\_port under \[Server\]) to match your setup.  The default values will work if the script is run locally.
-3. Set up the directory you would like the linked files to reside in, and change the three directories under \[Plex\] to match.
+1. Copy the included "sample.ini" config file to "config.ini" and place it in the same directory as the mythPlex script. If this file is not present, a new one will be generated with default values.
+2. Take note of all configured MythTV recording directories.  Fill in the "directories" variable under "\[Recording\]" with them; if there are multiple directories, please use a comma-separated list.
+3. Change the IP and port number (host\_url and host\_port under \[Server\]) to match your setup.  The default values will work if the script is run locally.
+4. Set up the directory you would like the linked files to reside in, and change the three directories under \[Plex\] to match.
 
 Remuxing
 ========
