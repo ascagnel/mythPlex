@@ -12,16 +12,16 @@ Note that this script requires local access to recordings.  The drives holding t
 Instructions
 ============
 
-1. Take note of all configured MythTV recording directories.  Fill in the "mythtv\_recording\_directories" variable with them; if there are multiple directories, please use a comma-separated list.
-2. Change the IP and port number (host\_url and host\_port) to match your setup.  The default values will work if the script is run locally.
-3. Set up the directory you would like the linked files to reside in, and change "plex\_library\_directory" to match.
+1. Take note of all configured MythTV recording directories.  Fill in the "directories" variable under "\[Recording\]" with them; if there are multiple directories, please use a comma-separated list.
+2. Change the IP and port number (host\_url and host\_port under \[Server\]) to match your setup.  The default values will work if the script is run locally.
+3. Set up the directory you would like the linked files to reside in, and change the three directories under \[Plex\] to match.
 
 Remuxing
 ========
 
 Remuxing is off by default.
 
-If you would prefer to outright copy the file, without changing its makeup, you may do so by changing the "remux\_enabled" option to "True".  The original container will be maintained.
+If you would prefer to outright copy the file, without changing its makeup, you may do so by changing the "remux\_enabled" option under \[Encoder\] to "True".  The original container will be maintained.
 
 Remuxing can be combined with commercial skipping.
 
@@ -32,7 +32,7 @@ Commercial skipping is off by default.
 
 Before enabling commercial skipping, make sure you have the automatic commercial skipping turned off for new recordings from MythFrontend, as this script will re-run the commercial flagger.
 
-To enable commercial skipping, set "mythcommflag\_enabled" to 'True' in config.py.  If you are seeing odd commercial jumps, setting "mythcommflag\_verbose" to 'True' will log the times and frame numbers of skip points.
+To enable commercial skipping, set "mythcommflag\_enabled" under \[Encoder\] to 'True' in config.py.  If you are seeing odd commercial jumps, setting "mythcommflag\_verbose" under \[Encoder\] to 'True' will log the times and frame numbers of skip points.
 
 Transcoding Recordings
 ======================
@@ -41,16 +41,16 @@ Transcoding is off by default.
 
 mythPlex can re-encode MythTV recordings to save space and play them back across more devices without requiring Plex to transcode on each playback.
 
-To enable transcoding, set "transcode\_enabled" to 'True' in config.py.
+To enable transcoding, set "transcode\_enabled" under \[Encoder\] to 'True' in config.py.
 
-If your recordings tend to be deinterlaced, setting "transcode\_deinterlace" will resolve this using avconv's built-in "yadif" filter.
+If your recordings tend to be deinterlaced, setting "deinterlace" under \[Encoder\] will resolve this using avconv's built-in "yadif" filter.
 
-To set a different audio or video codec, you can do so from the "transcode\_audicodec" and "transcode\_videocodec" variables.  By default, the original audio stream will be copied, and the video will be transcoded into H264.
+To set a different audio or video codec, you can do so from the "audicodec" and "videocodec" variables under \[Encoder\].  By default, the original audio stream will be copied, and the video will be transcoded into H264.
 
 Quality Presets
 ---------------
 
-If you would like higher or lower quality, you can change the "transcode\_preset".  Valid values are as follows (from the [libav wiki](https://wiki.libav.org/Encoding/h264#Preset_and_Tune)):
+If you would like higher or lower quality, you can change the "preset" under \[Encoder\].  Valid values are as follows (from the [libav wiki](https://wiki.libav.org/Encoding/h264#Preset_and_Tune)):
 
 * ultrafast
 * superfast
