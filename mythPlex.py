@@ -5,15 +5,15 @@ import xml.etree.ElementTree as ET
 import urllib.request
 import platform
 import re
-#from MythTV.tmdb3 import searchMovie
-#from MythTV.tmdb3 import set_key
 import calendar
 from datetime import datetime, timedelta
+import time
 import subprocess
 import configparser
 
 
 def main():
+    start_time = time.clock()
     print ("mythPlex, Copyright (C) 2014 Andrew Scagnelli")
     print ("mythPlex comes with ABSOLUTELY NO WARRANTY.")
     print ("This is free software, and you are welcome to redistribute it")
@@ -127,6 +127,7 @@ def main():
             print ("[INFO] Linking " + source_path + " ==> " + link_path)
             os.symlink(source_path, link_path)
     close_library(lib)
+    print ("[INFO] Finished processing in " + str(time.clock() - start_time) + "s")
 
 
 def close_library(lib):
