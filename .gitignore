@@ -11,3 +11,5 @@ config_own.pyc
 library
 
 .library
+
+config.ini
