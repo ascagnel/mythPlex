@@ -50,19 +50,13 @@ def main():
         title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
 
         episode_name = title + " - S" + ep_season + "E" + ep_num
-        print ("[INFO] Processing " + episode_name + " ...")
 
         # Skip previously finished files
         if ep_id in lib:
             print (("[WARN] Matched program ID" + ep_id +
                    ", skipping " + episode_name))
-            print ("[INFO] Episode processing took " +
-                   format(time.clock() - start_episode_time, '.5f') + "s")
             continue
-        elif ep_id is not None:
-            print ("[INFO] Adding " + episode_name +
-                   " to library [" + ep_id + "]")
-            lib.append(ep_id)
+
 
         # Handle specials, movies, etc.
         if ep_season == '00' and ep_num == '00':
@@ -80,9 +74,6 @@ def main():
             print ("[INFO] have season and episode.")
             link_path = (config.plex_tv_directory +
                          title + separator + episode_name + ep_file_extension)
-
-        # Symlink path
-        print ("[INFO] symlink processing..")
 
         # Watch for oprhaned recordings!
         source_dir = None
@@ -112,7 +103,6 @@ def main():
             print ("[ERROR] Could not open recording " + episode_name + ".")
             print ("[ERROR] The recording will be checked again next run.")
             continue
-            
 
         if (config.plex_tv_directory in link_path):
             if (not os.path.exists(config.plex_tv_directory + title)):
@@ -129,6 +119,8 @@ def main():
                 print ("[INFO] Show folder does not exist, creating.")
                 os.makedirs(config.plex_specials_directory + title)
 
+        print ("[INFO] Processing " + episode_name + " ...")
+
         # avconv (next-gen ffmpeg) support -- convert files to MP4
         # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
         # support native playback.
@@ -144,6 +136,11 @@ def main():
             os.symlink(source_path, link_path)
         print ("[INFO] Episode processing took " +
                format(time.clock() - start_episode_time, '.5f') + "s")
+
+        if ep_id is not None:
+            print ("[INFO] Adding " + episode_name +
+                   " to library [" + ep_id + "]")
+            lib.append(ep_id)
     close_library(lib)
     print ("[INFO] Finished processing in " + str(time.clock() - start_time)
            + "s")
@@ -159,6 +156,14 @@ def close_library(lib):
 
 
 def mythcommflag_run(source_path):
+
+    fps_pattern = re.compile(r'(\d{2}.\d{2}) fps')
+    avconv_fps = subprocess.Popen(['avconv','-i',source_path], 
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE).communicate()[1]
+    framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
+    print ('[INFO] Video frame rate is ' + str(framerate))
+
     mythcommflag_command = 'mythcommflag -f '
     mythcommflag_command += source_path
     mythcommflag_command += ' --outputmethod essentials'
@@ -184,9 +189,6 @@ def mythcommflag_run(source_path):
             pointtypes.append(line[3])
     cutlist.close()
     os.system('rm .mythExCommflag.edl')
-    framerate = float(subprocess.call(['echo','avconv -i ' + source_path +
-                      ' 2>&1 | sed -n \"s/.*, \\(.*\\) fp.*/\\1/p\"']))
-    print ('[INFO] Video frame rate is ' + str(framerate))
     print ('[INFO] Starts with commercial? ' + str(starts_with_commercial))
     print ('[INFO] Found ' + str(len(cutpoints)) + ' cut points.')
     segments = 0
@@ -247,7 +249,7 @@ def run_avconv(source_path, output_path):
     if (config.transcode_deinterlace is True):
         avconv_command += " -vf yadif"
     avconv_command += " -profile:v " + config.transcode_profile
-    avconv_command += " -level " + config.transcode_level
+    avconv_command += " -level " + str(config.transcode_level)
     avconv_command += " -c:a " + config.transcode_audiocodec
     avconv_command += " -threads " + str(config.transcode_threads)
     output_path = output_path[:-3]
