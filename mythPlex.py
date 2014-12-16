@@ -32,6 +32,7 @@ def main():
 
     for program in root.iter('Program'):
 
+        start_episode_time = time.clock()
         title = program.find('Title').text
         ep_season = program.find('Season').text.zfill(2)
         ep_num = program.find('Episode').text.zfill(2)
@@ -55,6 +56,7 @@ def main():
         if ep_id in lib:
             print (("[WARN] Matched program ID" + ep_id +
                    ", skipping " + episode_name))
+            print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
             continue
         elif ep_id is not None:
             print ("[INFO] Adding " + episode_name +
@@ -92,10 +94,12 @@ def main():
         if source_dir is None:
             print (("[ERROR] Cannot create symlink for "
                    + episode_name + ", no valid source directory.  Skipping."))
+            print ("[INFO] Episode processing took " + format(str(time.clock() - start_episode_time), '.5f') + "s")
             continue
 
         if os.path.exists(link_path) or os.path.islink(link_path):
             print ("[WARN] Symlink " + link_path + " already exists.  Skipping.")
+            print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
             continue
 
         if (config.plex_tv_directory in link_path):
@@ -126,6 +130,7 @@ def main():
         else:
             print ("[INFO] Linking " + source_path + " ==> " + link_path)
             os.symlink(source_path, link_path)
+        print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
     close_library(lib)
     print ("[INFO] Finished processing in " + str(time.clock() - start_time) + "s")
 
