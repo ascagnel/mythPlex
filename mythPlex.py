@@ -56,7 +56,8 @@ def main():
         if ep_id in lib:
             print (("[WARN] Matched program ID" + ep_id +
                    ", skipping " + episode_name))
-            print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
+            print ("[INFO] Episode processing took " +
+                   format(time.clock() - start_episode_time, '.5f') + "s")
             continue
         elif ep_id is not None:
             print ("[INFO] Adding " + episode_name +
@@ -94,13 +95,24 @@ def main():
         if source_dir is None:
             print (("[ERROR] Cannot create symlink for "
                    + episode_name + ", no valid source directory.  Skipping."))
-            print ("[INFO] Episode processing took " + format(str(time.clock() - start_episode_time), '.5f') + "s")
+            print ("[INFO] Episode processing took " +
+                   format(time.clock() - start_episode_time, '.5f') + "s")
             continue
 
         if os.path.exists(link_path) or os.path.islink(link_path):
-            print ("[WARN] Symlink " + link_path + " already exists.  Skipping.")
-            print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
+            print ("[WARN] Symlink " + link_path + 
+                   " already exists.  Skipping.")
+            print ("[INFO] Episode processing took " +
+                   format(time.clock() - start_episode_time, '.5f') + "s")
             continue
+
+        try:
+            accesstest = open(source_path)
+        except PermissionError:
+            print ("[ERROR] Could not open recording " + episode_name + ".")
+            print ("[ERROR] The recording will be checked again next run.")
+            continue
+            
 
         if (config.plex_tv_directory in link_path):
             if (not os.path.exists(config.plex_tv_directory + title)):
@@ -130,9 +142,11 @@ def main():
         else:
             print ("[INFO] Linking " + source_path + " ==> " + link_path)
             os.symlink(source_path, link_path)
-        print ("[INFO] Episode processing took " + format(time.clock() - start_episode_time, '.5f') + "s")
+        print ("[INFO] Episode processing took " +
+               format(time.clock() - start_episode_time, '.5f') + "s")
     close_library(lib)
-    print ("[INFO] Finished processing in " + str(time.clock() - start_time) + "s")
+    print ("[INFO] Finished processing in " + str(time.clock() - start_time)
+           + "s")
 
 
 def close_library(lib):
@@ -259,28 +273,7 @@ def run_avconv_remux(source_path, output_path):
 def load_config():
     if (os.path.isfile("config.ini") is False):
         print('[INFO] No config file found, writing defaults.')
-        defaultconfig = configparser.ConfigParser()
-        defaultconfig['Server'] = {'host_url': 'localhost',
-                                   'host_port': '6544'}
-        defaultconfig['Plex'] = {'tv': '~/TV Shows/',
-                                 'movie': '~/Movies/',
-                                 'specials': '~/TV Shows/Specials/'}
-        defaultconfig['Recording'] = {'directories': '/var/media/disk1/Recordings/'}
-        defaultconfig['Encoder'] = {'transcode_enabled': 'False',
-                                    'remux_enabled': 'False',
-                                    'mythcommflag_enabled': 'False',
-                                    'mythcommflag_verbose': 'False',
-                                    'deinterlace': 'True',
-                                    'audiocodec': 'copy',
-                                    'threads': '2',
-                                    'nicevalue': '0',
-                                    'videocodec': 'libx264',
-                                    'preset': 'veryfast',
-                                    'tune': 'film',
-                                    'profile': 'high',
-                                    'level': '41'}
-        with open('config.ini', 'w') as configfile:
-            defaultconfig.write(configfile)
+        create_default_config()
     else:
         print('[INFO] Config file found, reading...')
 
@@ -310,6 +303,32 @@ def load_config():
     config.transcode_tune = configfile['Encoder']['tune']
     config.transcode_profile = configfile['Encoder']['profile']
     config.transcode_level = int(configfile['Encoder']['level'])
+
+
+def create_default_config():
+    defaultconfig = configparser.ConfigParser()
+    defaultconfig['Server'] = {'host_url': 'localhost',
+                               'host_port': '6544'}
+    defaultconfig['Plex'] = {'tv': '~/TV Shows/',
+                             'movie': '~/Movies/',
+                             'specials': '~/TV Shows/Specials/'}
+    defaultconfig['Recording'] = {'directories': '/var/lib/mythtv/recordings/'}
+    defaultconfig['Encoder'] = {'transcode_enabled': 'False',
+                                'remux_enabled': 'False',
+                                'mythcommflag_enabled': 'False',
+                                'mythcommflag_verbose': 'False',
+                                'deinterlace': 'True',
+                                'audiocodec': 'copy',
+                                'threads': '2',
+                                'nicevalue': '0',
+                                'videocodec': 'libx264',
+                                'preset': 'veryfast',
+                                'tune': 'film',
+                                'profile': 'high',
+                                'level': '41'}
+    with open('config.ini', 'w') as configfile:
+        defaultconfig.write(configfile)
+        configfile.close()
 
 
 def utc_to_local(utc_dt):
