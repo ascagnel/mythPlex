@@ -158,6 +158,8 @@ def close_library(lib):
 def mythcommflag_run(source_path):
 
     fps_pattern = re.compile(r'(\d{2}.\d{2}) fps')
+    # When calling avconv, it dumps many messages to stderr, not stdout.
+    # This may break someday because of that.
     avconv_fps = subprocess.Popen(['avconv','-i',source_path], 
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()[1]
@@ -168,7 +170,6 @@ def mythcommflag_run(source_path):
     mythcommflag_command += source_path
     mythcommflag_command += ' --outputmethod essentials'
     mythcommflag_command += ' --outputfile .mythExCommflag.edl'
-    #mythcommflag_command += ' --method d2_scene'
     mythcommflag_command += ' --skipdb --quiet'
     if config.mythcommflag_verbose:
         mythcommflag_command += ' -v'
