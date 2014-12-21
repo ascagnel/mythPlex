@@ -15,14 +15,14 @@ import logging
 
 FORMAT='%(asctime)-s %(levelname)-s %(message)s'
 DATE_FORMAT='%H:%M:%S'
-logging.basicConfig(level=logging.INFO, 
+logging.basicConfig(level=logging.DEBUG, 
                     format = FORMAT,
                     datefmt = DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 
 def main():
-    start_time = time.clock()
+    start_time = time.time()
     print("mythPlex, Copyright (C) 2014 Andrew Scagnelli")
     print("mythPlex comes with ABSOLUTELY NO WARRANTY.")
     print("This is free software, and you are welcome to redistribute it")
@@ -41,7 +41,7 @@ def main():
 
     for program in root.iter('Program'):
 
-        start_episode_time = time.clock()
+        start_episode_time = time.time()
         title = program.find('Title').text
         ep_season = program.find('Season').text.zfill(2)
         ep_num = program.find('Episode').text.zfill(2)
@@ -62,8 +62,8 @@ def main():
 
         # Skip previously finished files
         if ep_id in lib:
-            logger.warning("Matched ID %s", ep_id)
-            logger.warning("Skipping episode %s", episode_name)
+            logger.debug("Matched ID %s", ep_id)
+            logger.info("Skipping finished episode %s", episode_name)
             continue
 
 
@@ -96,13 +96,13 @@ def main():
             logger.error("Cannot create symlink for %s, no valid source dir.",
                          episode_name)
             logger.info("Episode processing took %ss",
-                        format(time.clock() - start_episode_time, '.5f'))
+                        format(time.time() - start_episode_time, '.5f'))
             continue
 
         if os.path.exists(link_path) or os.path.islink(link_path):
             logger.warning("Symlink %s already exists, skipping.", link_path)
             logger.info("Episode processing took %ss",
-                        format(time.clock() - start_episode_time, '.5f'))
+                        format(time.time() - start_episode_time, '.5f'))
             continue
 
         try:
@@ -143,14 +143,14 @@ def main():
             logger.info("Linking %s to %s", source_path, link_path)
             os.symlink(source_path, link_path)
         logger.info("Episode processing took %s",
-                    format(time.clock() - start_episode_time, '.5f'))
+                    format(time.time() - start_episode_time, '.5f'))
 
         if ep_id is not None:
             logger.info("Adding %s to library [%s]", episode_name, ep_id)
             lib.append(ep_id)
     close_library(lib)
     logger.info("Finished processing in %s",
-                format(time.clock() - start_time, '.5f'))
+                format(time.time() - start_time, '.5f'))
 
 
 def close_library(lib):
