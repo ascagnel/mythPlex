@@ -10,22 +10,31 @@ from datetime import datetime, timedelta
 import time
 import subprocess
 import configparser
+import logging
+
+
+FORMAT='%(asctime)-s %(levelname)-s %(message)s'
+DATE_FORMAT='%H:%M:%S'
+logging.basicConfig(level=logging.INFO, 
+                    format = FORMAT,
+                    datefmt = DATE_FORMAT)
+logger = logging.getLogger(__name__)
 
 
 def main():
     start_time = time.clock()
-    print ("mythPlex, Copyright (C) 2014 Andrew Scagnelli")
-    print ("mythPlex comes with ABSOLUTELY NO WARRANTY.")
-    print ("This is free software, and you are welcome to redistribute it")
-    print ("under certain conditions.")
-    print ("See LICENSE file for details.\n")
+    print("mythPlex, Copyright (C) 2014 Andrew Scagnelli")
+    print("mythPlex comes with ABSOLUTELY NO WARRANTY.")
+    print("This is free software, and you are welcome to redistribute it")
+    print("under certain conditions.")
+    print("See LICENSE file for details.")
 
     load_config()
 
-    print ("[INFO] Starting mythEx")
+    logger.info("Starting mythEx")
     lib = open_library()
     url = "http://" + config.host_url + ":" + config.host_port
-    print ("[INFO] Looking up from MythTV: " + url + '/Dvr/GetRecordedList')
+    logger.info("Looking up from MythTV: %s/Dvr/GetRecordedList", url)
 
     tree = ET.parse(urllib.request.urlopen(url + '/Dvr/GetRecordedList'))
     root = tree.getroot()
@@ -53,25 +62,25 @@ def main():
 
         # Skip previously finished files
         if ep_id in lib:
-            print (("[WARN] Matched program ID" + ep_id +
-                   ", skipping " + episode_name))
+            logger.warning("Matched ID %s", ep_id)
+            logger.warning("Skipping episode %s", episode_name)
             continue
 
 
         # Handle specials, movies, etc.
         if ep_season == '00' and ep_num == '00':
             if (ep_start_time is not None):
-                print ("[INFO] (fallback 2) using start time")
+                logger.info("(fallback 2) using start time")
                 episode_name = title + " - " + ep_start_time
-                print ("[INFO] Changed to " + episode_name)
+                logger.info("[INFO] Changed to %s", episode_name)
                 link_path = (config.plex_specials_directory +
                              title + separator + episode_name +
                              ep_file_extension)
             else:
-                print ("[WARN] no start time available")
+                logger.warning("No start time available")
 
         else:
-            print ("[INFO] have season and episode.")
+            logger.info("Have season and episode.")
             link_path = (config.plex_tv_directory +
                          title + separator + episode_name + ep_file_extension)
 
@@ -84,42 +93,41 @@ def main():
                 break
 
         if source_dir is None:
-            print (("[ERROR] Cannot create symlink for "
-                   + episode_name + ", no valid source directory.  Skipping."))
-            print ("[INFO] Episode processing took " +
-                   format(time.clock() - start_episode_time, '.5f') + "s")
+            logger.error("Cannot create symlink for %s, no valid source dir.",
+                         episode_name)
+            logger.info("Episode processing took %ss",
+                        format(time.clock() - start_episode_time, '.5f'))
             continue
 
         if os.path.exists(link_path) or os.path.islink(link_path):
-            print ("[WARN] Symlink " + link_path + 
-                   " already exists.  Skipping.")
-            print ("[INFO] Episode processing took " +
-                   format(time.clock() - start_episode_time, '.5f') + "s")
+            logger.warning("Symlink %s already exists, skipping.", link_path)
+            logger.info("Episode processing took %ss",
+                        format(time.clock() - start_episode_time, '.5f'))
             continue
 
         try:
             accesstest = open(source_path)
         except PermissionError:
-            print ("[ERROR] Could not open recording " + episode_name + ".")
-            print ("[ERROR] The recording will be checked again next run.")
+            logger.error("Could not open recording %s", episode_name)
+            logger.error("The recording will be checked again the next run.")
             continue
 
         if (config.plex_tv_directory in link_path):
             if (not os.path.exists(config.plex_tv_directory + title)):
-                print ("[INFO] Show folder does not exist, creating.")
+                logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_tv_directory + title)
 
         if (config.plex_movie_directory in link_path):
             if (not os.path.exists(config.plex_movie_directory + title)):
-                print ("[INFO] Show folder does not exist, creating.")
+                logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_movie_directory + title)
 
         if (config.plex_specials_directory in link_path):
             if (not os.path.exists(config.plex_specials_directory + title)):
-                print ("[INFO] Show folder does not exist, creating.")
+                plogger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_specials_directory + title)
 
-        print ("[INFO] Processing " + episode_name + " ...")
+        logger.info("Processing %s", episode_name)
 
         # avconv (next-gen ffmpeg) support -- convert files to MP4
         # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
@@ -132,18 +140,17 @@ def main():
             run_avconv_remux(source_path, link_path)
 
         else:
-            print ("[INFO] Linking " + source_path + " ==> " + link_path)
+            logger.info("Linking %s to %s", source_path, link_path)
             os.symlink(source_path, link_path)
-        print ("[INFO] Episode processing took " +
-               format(time.clock() - start_episode_time, '.5f') + "s")
+        logger.info("Episode processing took %s",
+                    format(time.clock() - start_episode_time, '.5f'))
 
         if ep_id is not None:
-            print ("[INFO] Adding " + episode_name +
-                   " to library [" + ep_id + "]")
+            logger.info("Adding %s to library [%s]", episode_name, ep_id)
             lib.append(ep_id)
     close_library(lib)
-    print ("[INFO] Finished processing in " + str(time.clock() - start_time)
-           + "s")
+    logger.info("Finished processing in %s",
+                format(time.clock() - start_time, '.5f'))
 
 
 def close_library(lib):
@@ -164,7 +171,7 @@ def mythcommflag_run(source_path):
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()[1]
     framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
-    print ('[INFO] Video frame rate is ' + str(framerate))
+    logger.debug("Video frame rate: %s", str(framerate))
 
     mythcommflag_command = 'mythcommflag -f '
     mythcommflag_command += source_path
@@ -173,7 +180,7 @@ def mythcommflag_run(source_path):
     mythcommflag_command += ' --skipdb --quiet'
     if config.mythcommflag_verbose:
         mythcommflag_command += ' -v'
-    print ("[INFO] Running mythcommflag: {" + mythcommflag_command + "}")
+    logger.info("mythcommflag: [%s]", mythcommflag_command)
     os.system(mythcommflag_command)
     cutlist = open('.mythExCommflag.edl', 'r')
     cutpoints = []
@@ -182,44 +189,43 @@ def mythcommflag_run(source_path):
     for cutpoint in cutlist:
         if 'framenum' in cutpoint:
             line = cutpoint.split()
-            print (('[INFO] ' + line[0] + ' - {' + line[1] + '} -- ' +
-                   line[2] + ' - {' + line[3] + '}'))
+            logger.info("%s - {%s} -- %s - {%s}", 
+                        line[0], line[1], 
+                        line[2], line[3])
             if line[1] is '0' and line[3] is '4':
                 starts_with_commercial = True
             cutpoints.append(line[1])
             pointtypes.append(line[3])
     cutlist.close()
     os.system('rm .mythExCommflag.edl')
-    print ('[INFO] Starts with commercial? ' + str(starts_with_commercial))
-    print ('[INFO] Found ' + str(len(cutpoints)) + ' cut points.')
+    logger.debug("Starts with commercial? %s",  str(starts_with_commercial))
+    logger.debug("Found %s cut points", str(len(cutpoints)))
     segments = 0
     for cutpoint in cutpoints:
         index = cutpoints.index(cutpoint)
         startpoint = float(cutpoints[index])/framerate
         duration = 0
         if index is 0 and not starts_with_commercial:
-            print ('[INFO] Starting with non-commercial')
+            logger.debug("Starting with non-commercial")
             duration = float(cutpoints[0])/framerate
             startpoint = 0
         elif pointtypes[index] is '4':
-            print ('[INFO] Skipping cut point type 4')
+            logger.debug("Skipping cut point type 4")
             continue
         elif (index+1) < len(cutpoints):
             duration = (float(cutpoints[index+1]) -
                         float(cutpoints[index]))/framerate
-        print ('[INFO] Start point: [' + str(startpoint) + ']')
-        print (('[INFO] duration of segment ' +
-               str(segments) + ': ' + str(duration)))
+        logger.debug("Start point [%s]", str(startpoint))
+        logger.debug("Duration of segment %s: %s", str(segments), str(duration))
         if duration is 0:
-            avconv_command = ('avconv -i ' + source_path + ' -ss ' +
+            avconv_command = ('avconv -v 16 -i ' + source_path + ' -ss ' +
                               str(startpoint) + ' -c copy output' +
                               str(segments) + '.mpg')
         else:
-            avconv_command = ('avconv -i ' + source_path + ' -ss ' +
+            avconv_command = ('avconv -v 16 -i ' + source_path + ' -ss ' +
                               str(startpoint) + ' -t ' + str(duration) +
                               ' -c copy output' + str(segments) + '.mpg')
-        print (('[INFO] running avconv with command line {' +
-               avconv_command + '}'))
+        logger.info("Running avconv command line {%s}", avconv_command)
         os.system(avconv_command)
         segments = segments + 1
     current_segment = 0
@@ -228,13 +234,13 @@ def mythcommflag_run(source_path):
         concat_command += ' output' + str(current_segment) + '.mpg'
         current_segment = current_segment + 1
     concat_command += ' >> tempfile.mpg'
-    print ('[INFO] Merging files with command [' + concat_command + ']')
+    logger.info("Merging files with command %s", concat_command)
     os.system(concat_command)
     return 'tempfile.mpg'
 
 
 def mythcommflag_cleanup():
-    print ('[INFO] Cleaning up temporary files.')
+    logger.info("Cleaning up temporary files.")
     os.system('rm output*.mpg')
     os.system('rm tempfile.mpg')
 
@@ -243,7 +249,7 @@ def run_avconv(source_path, output_path):
     if (config.mythcommflag_enabled is True):
         source_path = mythcommflag_run(source_path)
     avconv_command = "nice -n " + str(config.transcode_nicevalue)
-    avconv_command += " avconv -i " + source_path
+    avconv_command += " avconv -v 16 -i " + source_path
     avconv_command += " -c:v " + config.transcode_videocodec
     avconv_command += " -preset " + config.transcode_preset
     avconv_command += " -tune " + config.transcode_tune
@@ -256,7 +262,7 @@ def run_avconv(source_path, output_path):
     output_path = output_path[:-3]
     output_path += "mp4"
     avconv_command += " \"" + output_path + "\""
-    print ("[INFO] Running avconv with command line " + avconv_command)
+    logger.info("Running avconv command line %s", avconv_command)
     os.system(avconv_command)
     if (config.mythcommflag_enabled is True):
         mythcommflag_cleanup()
@@ -265,9 +271,9 @@ def run_avconv(source_path, output_path):
 def run_avconv_remux(source_path, output_path):
     if (config.mythcommflag_enabled is True):
         source_path = mythcommflag_run(source_path)
-    avconv_command = ("avconv -i " + source_path + " -c copy \"" +
+    avconv_command = ("avconv -v 16 -i " + source_path + " -c copy \"" +
                       output_path + "\"")
-    print ("Running avconv remux with command " + avconv_command)
+    logger.info("Running avconv remux command line %s", avconv_command)
     os.system(avconv_command)
     if (config.mythcommflag_enabled is True):
         mythcommflag_cleanup()
@@ -275,10 +281,10 @@ def run_avconv_remux(source_path, output_path):
 
 def load_config():
     if (os.path.isfile("config.ini") is False):
-        print('[INFO] No config file found, writing defaults.')
+        logger.info("No config file found, writing defaults.")
         create_default_config()
     else:
-        print('[INFO] Config file found, reading...')
+        logger.info("Config file found, reading...")
 
     configfile = configparser.ConfigParser()
     configfile.read('config.ini')
