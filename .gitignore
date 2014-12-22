@@ -13,3 +13,5 @@ library
 .library
 
 config.ini
+
+output.log

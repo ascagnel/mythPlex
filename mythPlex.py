@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.4
 
 import os
+import sys
+import logging
 import xml.etree.ElementTree as ET
 import urllib.request
 import platform
@@ -10,14 +12,15 @@ from datetime import datetime, timedelta
 import time
 import subprocess
 import configparser
-import logging
 
 
 FORMAT='%(asctime)-s %(levelname)-s %(message)s'
 DATE_FORMAT='%H:%M:%S'
 logging.basicConfig(level=logging.DEBUG, 
                     format = FORMAT,
-                    datefmt = DATE_FORMAT)
+                    datefmt = DATE_FORMAT,
+                    #filename = 'output.log')
+                    stream = sys.stdout)
 logger = logging.getLogger(__name__)
 
 
