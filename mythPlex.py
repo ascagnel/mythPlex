@@ -15,7 +15,7 @@ import configparser
 
 
 FORMAT='%(asctime)-s %(levelname)-s %(message)s'
-DATE_FORMAT='%m-%d-%y %H:%M:%S'
+DATE_FORMAT='%m-%d-%Y %H:%M:%S'
 logging.basicConfig(level=logging.DEBUG,
                     format = FORMAT,
                     datefmt = DATE_FORMAT,
