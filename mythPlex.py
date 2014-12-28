@@ -15,8 +15,8 @@ import configparser
 
 
 FORMAT='%(asctime)-s %(levelname)-s %(message)s'
-DATE_FORMAT='%H:%M:%S'
-logging.basicConfig(level=logging.DEBUG, 
+DATE_FORMAT='%m-%d-%y %H:%M:%S'
+logging.basicConfig(level=logging.DEBUG,
                     format = FORMAT,
                     datefmt = DATE_FORMAT,
                     #filename = 'output.log')
@@ -170,7 +170,7 @@ def mythcommflag_run(source_path):
     fps_pattern = re.compile(r'(\d{2}.\d{2}) fps')
     # When calling avconv, it dumps many messages to stderr, not stdout.
     # This may break someday because of that.
-    avconv_fps = subprocess.Popen(['avconv','-i',source_path], 
+    avconv_fps = subprocess.Popen(['avconv','-i',source_path],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()[1]
     framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
@@ -192,8 +192,8 @@ def mythcommflag_run(source_path):
     for cutpoint in cutlist:
         if 'framenum' in cutpoint:
             line = cutpoint.split()
-            logger.info("%s - {%s} -- %s - {%s}", 
-                        line[0], line[1], 
+            logger.info("%s - {%s} -- %s - {%s}",
+                        line[0], line[1],
                         line[2], line[3])
             if line[1] is '0' and line[3] is '4':
                 starts_with_commercial = True
@@ -291,7 +291,7 @@ def load_config():
 
     configfile = configparser.ConfigParser()
     configfile.read('config.ini')
-    
+
     global config
     config.host_url = configfile['Server']['host_url']
     config.host_port = configfile['Server']['host_port']
@@ -306,7 +306,7 @@ def load_config():
     config.remux_enabled = bool(configfile['Encoder']['remux_enabled'])
     config.mythcommflag_enabled = bool(configfile['Encoder']['mythcommflag_enabled'])
     config.mythcommflag_verbose = bool(configfile['Encoder']['mythcommflag_verbose'])
-    config.transcode_deinterlace = bool(configfile['Encoder']['deinterlace']) 
+    config.transcode_deinterlace = bool(configfile['Encoder']['deinterlace'])
     config.transcode_audiocodec = configfile['Encoder']['audiocodec']
     config.transcode_threads = int(configfile['Encoder']['threads'])
     config.transcode_nicevalue = int(configfile['Encoder']['nicevalue'])
