@@ -378,11 +378,12 @@ class Config(object):
         self.plex_tv_directory = None
         self.plex_movie_directory = None
         self.plex_specials_directory = None
-        self.recording_directories = None
+        self.dirs = None
+        self.permission = True
         self.transcode_enabled = None
         self.remux_enabled = None
-        self.mythcommflag_enabled = None
-        self.mythcommflag_verbose = None
+        self.mcf_enabled = None
+        self.mcf_verbose = None
         self.transcode_deinterlace = None
         self.transcode_audiocodec = None
         self.transcode_threads = None
