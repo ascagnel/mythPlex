@@ -12,15 +12,16 @@ from datetime import datetime, timedelta
 import time
 import subprocess
 import configparser
+from errno import EACCES
 
 
-FORMAT='%(asctime)-s %(levelname)-s %(message)s'
-DATE_FORMAT='%m-%d-%Y %H:%M:%S'
+FORMAT = '%(asctime)-s %(levelname)-s %(message)s'
+DATE_FORMAT = '%m-%d-%Y %H:%M:%S'
 logging.basicConfig(level=logging.DEBUG,
-                    format = FORMAT,
-                    datefmt = DATE_FORMAT,
+                    format=FORMAT,
+                    datefmt=DATE_FORMAT,
                     #filename = 'output.log')
-                    stream = sys.stdout)
+                    stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 
@@ -69,7 +70,6 @@ def main():
             logger.info("Skipping finished episode %s", episode_name)
             continue
 
-
         # Handle specials, movies, etc.
         if ep_season == '00' and ep_num == '00':
             if (ep_start_time is not None):
@@ -89,7 +89,7 @@ def main():
 
         # Watch for oprhaned recordings!
         source_dir = None
-        for myth_dir in config.mythtv_recording_directories[:]:
+        for myth_dir in config.dirs[:]:
             source_path = myth_dir + ep_file_name
             if os.path.isfile(source_path):
                 source_dir = myth_dir
@@ -108,12 +108,14 @@ def main():
                         format(time.time() - start_episode_time, '.5f'))
             continue
 
-        try:
-            accesstest = open(source_path)
-        except PermissionError:
-            logger.error("Could not open recording %s", episode_name)
-            logger.error("The recording will be checked again the next run.")
-            continue
+        if config.permission:
+            try:
+                open(source_path)
+            except (IOError, OSError) as e:
+                if e.errno == EACCES:
+                    logger.error("Could not open recording %s", episode_name)
+                    logger.error("It will be checked again next run.")
+                    continue
 
         if (config.plex_tv_directory in link_path):
             if (not os.path.exists(config.plex_tv_directory + title)):
@@ -181,7 +183,7 @@ def mythcommflag_run(source_path):
     mythcommflag_command += ' --outputmethod essentials'
     mythcommflag_command += ' --outputfile .mythExCommflag.edl'
     mythcommflag_command += ' --skipdb --quiet'
-    if config.mythcommflag_verbose:
+    if config.mcf_verbose:
         mythcommflag_command += ' -v'
     logger.info("mythcommflag: [%s]", mythcommflag_command)
     os.system(mythcommflag_command)
@@ -251,7 +253,7 @@ def mythcommflag_cleanup():
 
 
 def run_avconv(source_path, output_path):
-    if (config.mythcommflag_enabled is True):
+    if (config.mcf_enabled is True):
         source_path = mythcommflag_run(source_path)
     avconv_command = "nice -n " + str(config.transcode_nicevalue)
     avconv_command += " avconv -v 16 -i " + source_path
@@ -269,18 +271,18 @@ def run_avconv(source_path, output_path):
     avconv_command += " \"" + output_path + "\""
     logger.info("Running avconv command line %s", avconv_command)
     os.system(avconv_command)
-    if (config.mythcommflag_enabled is True):
+    if (config.mcf_enabled is True):
         mythcommflag_cleanup()
 
 
 def run_avconv_remux(source_path, output_path):
-    if (config.mythcommflag_enabled is True):
+    if (config.mcf_enabled is True):
         source_path = mythcommflag_run(source_path)
     avconv_command = ("avconv -v 16 -i " + source_path + " -c copy \"" +
                       output_path + "\"")
     logger.info("Running avconv remux command line %s", avconv_command)
     os.system(avconv_command)
-    if (config.mythcommflag_enabled is True):
+    if (config.mcf_enabled is True):
         mythcommflag_cleanup()
 
 
@@ -302,12 +304,17 @@ def load_config():
     config.plex_movie_directory = configfile['Plex']['movie']
     config.plex_specials_directory = configfile['Plex']['specials']
 
-    config.mythtv_recording_directories = configfile['Recording']['directories'].split(',')
+    config.dirs = configfile['Recording']['directories'].split(',')
+    try:
+        config.permission = bool(configfile['Recording']['permission_check'])
+    except KeyError:
+        config.permission = True
+        # This space intentionally left blank
 
     config.transcode_enabled = bool(configfile['Encoder']['transcode_enabled'])
     config.remux_enabled = bool(configfile['Encoder']['remux_enabled'])
-    config.mythcommflag_enabled = bool(configfile['Encoder']['mythcommflag_enabled'])
-    config.mythcommflag_verbose = bool(configfile['Encoder']['mythcommflag_verbose'])
+    config.mcf_enabled = bool(configfile['Encoder']['mythcommflag_enabled'])
+    config.mcf_verbose = bool(configfile['Encoder']['mythcommflag_verbose'])
     config.transcode_deinterlace = bool(configfile['Encoder']['deinterlace'])
     config.transcode_audiocodec = configfile['Encoder']['audiocodec']
     config.transcode_threads = int(configfile['Encoder']['threads'])
@@ -326,7 +333,8 @@ def create_default_config():
     defaultconfig['Plex'] = {'tv': '~/TV Shows/',
                              'movie': '~/Movies/',
                              'specials': '~/TV Shows/Specials/'}
-    defaultconfig['Recording'] = {'directories': '/var/lib/mythtv/recordings/'}
+    defaultconfig['Recording'] = {'directories': '/var/lib/mythtv/recordings/',
+                                  'permission_check': 'True'}
     defaultconfig['Encoder'] = {'transcode_enabled': 'False',
                                 'remux_enabled': 'False',
                                 'mythcommflag_enabled': 'False',
@@ -365,25 +373,25 @@ def open_library():
 
 class Config(object):
     def __init__(self):
-        self.host_url=None
-        self.host_port=None
-        self.plex_tv_directory=None
-        self.plex_movie_directory=None
-        self.plex_specials_directory=None
-        self.mythtv_recording_directories=None
-        self.transcode_enabled=None
-        self.remux_enabled=None
-        self.mythcommflag_enabled=None
-        self.mythcommflag_verbose=None
-        self.transcode_deinterlace=None
-        self.transcode_audiocodec=None
-        self.transcode_threads=None
-        self.transcode_nicevalue=None
-        self.transcode_videocodec=None
-        self.transcode_preset=None
-        self.transcode_tune=None
-        self.transcode_profile=None
-        self.transcode_level=None
+        self.host_url = None
+        self.host_port = None
+        self.plex_tv_directory = None
+        self.plex_movie_directory = None
+        self.plex_specials_directory = None
+        self.recording_directories = None
+        self.transcode_enabled = None
+        self.remux_enabled = None
+        self.mythcommflag_enabled = None
+        self.mythcommflag_verbose = None
+        self.transcode_deinterlace = None
+        self.transcode_audiocodec = None
+        self.transcode_threads = None
+        self.transcode_nicevalue = None
+        self.transcode_videocodec = None
+        self.transcode_preset = None
+        self.transcode_tune = None
+        self.transcode_profile = None
+        self.transcode_level = None
 
 
 config = Config()
