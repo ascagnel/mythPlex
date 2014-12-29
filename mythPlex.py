@@ -127,7 +127,7 @@ def main():
 
         if (config.plex_specials_directory in link_path):
             if (not os.path.exists(config.plex_specials_directory + title)):
-                plogger.info("Show folder does not exist, creating.")
+                logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_specials_directory + title)
 
         logger.info("Processing %s", episode_name)
@@ -170,7 +170,7 @@ def mythcommflag_run(source_path):
     fps_pattern = re.compile(r'(\d{2}.\d{2}) fps')
     # When calling avconv, it dumps many messages to stderr, not stdout.
     # This may break someday because of that.
-    avconv_fps = subprocess.Popen(['avconv','-i',source_path],
+    avconv_fps = subprocess.Popen(['avconv', '-i', source_path],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()[1]
     framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
@@ -219,7 +219,9 @@ def mythcommflag_run(source_path):
             duration = (float(cutpoints[index+1]) -
                         float(cutpoints[index]))/framerate
         logger.debug("Start point [%s]", str(startpoint))
-        logger.debug("Duration of segment %s: %s", str(segments), str(duration))
+        logger.debug("Duration of segment %s: %s",
+                     str(segments),
+                     str(duration))
         if duration is 0:
             avconv_command = ('avconv -v 16 -i ' + source_path + ' -ss ' +
                               str(startpoint) + ' -c copy output' +
