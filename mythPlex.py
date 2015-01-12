@@ -47,6 +47,7 @@ def main():
 
         start_episode_time = time.time()
         title = program.find('Title').text
+        ep_title = program.find('SubTitle').text
         ep_season = program.find('Season').text.zfill(2)
         ep_num = program.find('Episode').text.zfill(2)
         ep_file_extension = program.find('FileName').text[-4:]
@@ -61,8 +62,9 @@ def main():
 
         # parse show name for file-system safe name
         title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
+        ep_title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', ep_title)
 
-        episode_name = title + " - S" + ep_season + "E" + ep_num
+        episode_name = title + " - S" + ep_season + "E" + ep_num + " - " + ep_title
 
         # Skip previously finished files
         if ep_id in lib:
