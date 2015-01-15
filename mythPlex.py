@@ -183,7 +183,13 @@ def mythcommflag_run(source_path):
     avconv_fps = subprocess.Popen(['avconv', '-i', source_path],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()[1]
-    framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
+    try:
+        framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
+    except AttributeError as ae:
+        logger.info("Could not look up FPS, trying PAL format (25FPS).")
+        fps_pattern = re.compile(r'(\d{2} fps')
+        framerate = float(fps_pattern.search(str(avconv_fps)).groups()[0])
+
     logger.debug("Video frame rate: %s", str(framerate))
 
     mythcommflag_command = 'mythcommflag -f '
