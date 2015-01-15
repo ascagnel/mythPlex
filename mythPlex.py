@@ -62,13 +62,15 @@ def main():
 
         # parse show name for file-system safe name
         title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
-        ep_title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', ep_title)
+        episode_name = title + " - S" + ep_season + "E" + ep_num
 
-        episode_name = title + " - S" + ep_season + "E" + ep_num + " - " + ep_title
+        if (ep_title is not None):
+            ep_title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', ep_title)
+            episode_name = episode_name + " - " + ep_title
 
         # Skip previously finished files
         if ep_id in lib:
-            logger.debug("Matched ID %s", ep_id)
+            logger.debug("Matched ID %s, (filename %s)", ep_id, ep_file_name)
             logger.info("Skipping finished episode %s", episode_name)
             continue
 
@@ -77,7 +79,7 @@ def main():
             if (ep_start_time is not None):
                 logger.info("(fallback 2) using start time")
                 episode_name = title + " - " + ep_start_time
-                logger.info("[INFO] Changed to %s", episode_name)
+                logger.info("Changed to %s", episode_name)
                 link_path = (config.plex_specials_directory +
                              title + separator + episode_name +
                              ep_file_extension)
@@ -134,7 +136,7 @@ def main():
                 logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_specials_directory + title)
 
-        logger.info("Processing %s", episode_name)
+        logger.info("Processing %s (path %s)", episode_name, source_path)
 
         # avconv (next-gen ffmpeg) support -- convert files to MP4
         # so smaller devices (eg Roku, AppleTV, FireTV, Chromecast)
@@ -149,6 +151,10 @@ def main():
         else:
             logger.info("Linking %s to %s", source_path, link_path)
             os.symlink(source_path, link_path)
+
+        # Changing to plex ownership
+        os.system("chown plex:plex \"" + link_path + "\"")
+
         logger.info("Episode processing took %s",
                     format(time.time() - start_episode_time, '.5f'))
 
