@@ -325,11 +325,11 @@ def load_config():
         config.permission = True
         # This space intentionally left blank
 
-    config.transcode_enabled = bool(configfile['Encoder']['transcode_enabled'])
-    config.remux_enabled = bool(configfile['Encoder']['remux_enabled'])
-    config.mcf_enabled = bool(configfile['Encoder']['mythcommflag_enabled'])
-    config.mcf_verbose = bool(configfile['Encoder']['mythcommflag_verbose'])
-    config.transcode_deinterlace = bool(configfile['Encoder']['deinterlace'])
+    config.transcode_enabled = configfile['Encoder'].getboolean('transcode_enabled')
+    config.remux_enabled = configfile['Encoder'].getboolean('remux_enabled')
+    config.mcf_enabled = configfile['Encoder'].getboolean('mythcommflag_enabled')
+    config.mcf_verbose = configfile['Encoder'].getboolean('mythcommflag_verbose')
+    config.transcode_deinterlace = configfile['Encoder'].getboolean'deinterlace')
     config.transcode_audiocodec = configfile['Encoder']['audiocodec']
     config.transcode_threads = int(configfile['Encoder']['threads'])
     config.transcode_nicevalue = int(configfile['Encoder']['nicevalue'])
