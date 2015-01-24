@@ -125,16 +125,22 @@ def main():
             if (not os.path.exists(config.plex_tv_directory + title)):
                 logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_tv_directory + title)
+                os.system('chown plex:plex \"' + 
+                          config.plex_tv_directory + title + '\"')
 
         if (config.plex_movie_directory in link_path):
             if (not os.path.exists(config.plex_movie_directory + title)):
                 logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_movie_directory + title)
+                os.system('chown plex:plex \"' + 
+                          config.plex_movie_directory + title + '\"')
 
         if (config.plex_specials_directory in link_path):
             if (not os.path.exists(config.plex_specials_directory + title)):
                 logger.info("Show folder does not exist, creating.")
                 os.makedirs(config.plex_specials_directory + title)
+                os.system('chown plex:plex \"' + 
+                          config.plex_specials_directory + title + '\"')
 
         logger.info("Processing %s (path %s)", episode_name, source_path)
 
