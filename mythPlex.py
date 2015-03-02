@@ -329,7 +329,7 @@ def load_config():
     config.remux_enabled = configfile['Encoder'].getboolean('remux_enabled')
     config.mcf_enabled = configfile['Encoder'].getboolean('mythcommflag_enabled')
     config.mcf_verbose = configfile['Encoder'].getboolean('mythcommflag_verbose')
-    config.transcode_deinterlace = configfile['Encoder'].getboolean'deinterlace')
+    config.transcode_deinterlace = configfile['Encoder'].getboolean('deinterlace')
     config.transcode_audiocodec = configfile['Encoder']['audiocodec']
     config.transcode_threads = int(configfile['Encoder']['threads'])
     config.transcode_nicevalue = int(configfile['Encoder']['nicevalue'])
