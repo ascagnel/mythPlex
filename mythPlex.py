@@ -167,6 +167,74 @@ def main():
         if ep_id is not None:
             logger.info("Adding %s to library [%s]", episode_name, ep_id)
             lib.append(ep_id)
+
+    if config.transcode_enabled is False and config.remux_enabled is False:
+        # Delete the abandoned links for expiring shows
+        url = "http://" + config.host_url + ":" + config.host_port
+        logger.info("Looking up from MythTV: %s/Dvr/GetExpiringList", url)
+    
+        tree = ET.parse(urllib.request.urlopen(url + '/Dvr/GetExpiringList'))
+        root = tree.getroot()
+    
+        for program in root.iter('Program'):
+            ep_id = program.find('ProgramId').text
+            if ep_id in lib:
+                start_episode_time = time.time()
+                title = program.find('Title').text
+                ep_title = program.find('SubTitle').text
+                ep_season = program.find('Season').text.zfill(2)
+                ep_num = program.find('Episode').text.zfill(2)
+                ep_file_extension = program.find('FileName').text[-4:]
+                ep_file_name = program.find('FileName').text
+                ep_temp = program.find('StartTime').text
+                ep_start_time = utc_to_local(datetime.strptime(
+                                            ep_temp,
+                                            '%Y-%m-%dT%H:%M:%SZ'))
+                # parse start time for file-system safe name
+                ep_start_time = datetime.strftime(ep_start_time, 
+                        '%Y-%m-%d %H%M')
+        
+                # parse show name for file-system safe name
+                title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', title)
+                episode_name = title + " - S" + ep_season + "E" + ep_num
+        
+                if (ep_title is not None):
+                    ep_title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', 
+                            ep_title)
+                    episode_name = episode_name + " - " + ep_title
+        
+                # Handle specials, movies, etc.
+                if ep_season == '00' and ep_num == '00':
+                    if (ep_start_time is not None):
+                        episode_name = title + " - " + ep_start_time
+                        link_path = os.path.expanduser(
+                                config.plex_specials_directory +
+                                    title + separator + episode_name +
+                                    ep_file_extension)
+            
+                else:
+                    link_path = os.path.expanduser(config.plex_tv_directory +
+                                title + separator + episode_name + 
+                                ep_file_extension)
+                
+                if os.path.exists(link_path):
+                    logger.info("Path is not a broken link: \"%s\"", link_path)
+                elif os.path.islink(link_path):
+                    try:
+                        os.remove(link_path)
+                        logger.info("Removed link \"%s\" for recording %s", 
+                            link_path, ep_id)
+                    except OSError as e:
+                        if e.errno != errno.ENOENT:
+                            raise
+                        logger.warning("Could not remove link \"%s\"", 
+                                link_path)
+                else:
+                    logger.warning("Path \"%s\" is for %s is not a link",
+                            link_path, ep_id)
+            else: 
+                logger.info("Skipping removal of episode %s, not in library.", 
+                        ep_id)
     close_library(lib)
     logger.info("Finished processing in %s",
                 format(time.time() - start_time, '.5f'))
