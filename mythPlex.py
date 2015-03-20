@@ -80,7 +80,7 @@ def main():
                 logger.info("(fallback 2) using start time")
                 episode_name = title + " - " + ep_start_time
                 logger.info("Changed to %s", episode_name)
-                link_path = (config.plex_specials_directory +
+                link_path = os.path.expanduser(config.plex_specials_directory +
                              title + separator + episode_name +
                              ep_file_extension)
             else:
@@ -88,7 +88,7 @@ def main():
 
         else:
             logger.info("Have season and episode.")
-            link_path = (config.plex_tv_directory +
+            link_path = os.path.expanduser(config.plex_tv_directory +
                          title + separator + episode_name + ep_file_extension)
 
         # Watch for oprhaned recordings!
