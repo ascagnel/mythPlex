@@ -1,17 +1,6 @@
-
-config_own.py
-
-<<<<<<< HEAD
-=======
-config_own.pyc
-
->>>>>>> avconv
 *.pyc
-
-library
-
+*.swp
 .library
-
 config.ini
-
 output.log
+._*
